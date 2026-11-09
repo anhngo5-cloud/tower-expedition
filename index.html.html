@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Ancient Tower Expedition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@500;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#2b2350; --ink2:#5a5480; --paper:#fffaf0; --gold:#ffc23d; --gold2:#ff9f1c;
+  --t1:#ff6b6b; --t2:#339af0; --t3:#9775fa;
+  --ok:#2fb35a; --bad:#f03e3e;
+  --floor:#51cf66; --floorDark:#2b8a3e; --floorSoft:#ebfbee;
+  --r:22px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'Nunito',system-ui,sans-serif;color:var(--ink);overflow:hidden;
+  background:linear-gradient(180deg,#8fd3ff 0%,#c9ecff 38%,#fff1d6 100%);}
+h1,h2,h3,.fred{font-family:'Fredoka','Nunito',sans-serif}
+button{font-family:'Fredoka','Nunito',sans-serif;cursor:pointer;border:none}
+.sky{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.cloud{position:absolute;background:#fff;border-radius:999px;opacity:.85;filter:drop-shadow(0 6px 0 rgba(120,170,220,.25))}
+.cloud::before,.cloud::after{content:"";position:absolute;background:#fff;border-radius:50%}
+.cloud::before{width:55%;height:150%;left:15%;top:-70%}
+.cloud::after{width:40%;height:120%;right:12%;top:-45%}
+@keyframes drift{from{transform:translateX(-30vw)}to{transform:translateX(130vw)}}
+.spark{position:absolute;width:8px;height:8px;background:#fff;border-radius:50%;animation:twinkle 3s infinite ease-in-out;opacity:.7}
+@keyframes twinkle{0%,100%{transform:scale(.4);opacity:.2}50%{transform:scale(1.2);opacity:.9}}
+
+#app{position:relative;z-index:1;height:100vh;display:flex;flex-direction:column}
+/* ---------- top bar ---------- */
+.topbar{display:flex;align-items:center;gap:14px;padding:10px 18px;}
+.logo{display:flex;align-items:center;gap:10px}
+.logo .badge{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#ffd43b,#ff922b);display:grid;place-items:center;font-size:26px;box-shadow:0 4px 0 #e8590c}
+.logo h1{font-size:clamp(16px,1.6vw,24px);line-height:1;color:#3b2f7a;letter-spacing:.3px}
+.logo small{display:block;font-family:'Nunito';font-weight:800;font-size:clamp(10px,.85vw,13px);color:#7a5af8;letter-spacing:1px;text-transform:uppercase;margin-top:3px}
+.spacer{flex:1}
+.tbtn{background:#fff;color:var(--ink);font-weight:600;font-size:15px;padding:9px 14px;border-radius:14px;box-shadow:0 4px 0 #c7c2e6;display:flex;align-items:center;gap:6px;transition:transform .1s}
+.tbtn:hover{transform:translateY(-2px)}
+.tbtn:active{transform:translateY(2px);box-shadow:0 2px 0 #c7c2e6}
+
+/* ---------- layout ---------- */
+.main{flex:1;display:grid;grid-template-columns:1fr minmax(270px,23vw);gap:16px;padding:0 18px 16px;min-height:0}
+.stage{position:relative;min-height:0;border-radius:28px;overflow:hidden}
+.side{display:flex;flex-direction:column;gap:12px;min-height:0}
+
+/* ---------- leaderboard ---------- */
+.board{background:rgba(255,255,255,.88);border-radius:var(--r);padding:14px;box-shadow:0 6px 0 rgba(90,80,160,.18)}
+.board h3{font-size:20px;display:flex;align-items:center;gap:8px;margin-bottom:10px;color:#3b2f7a}
+.board-list{position:relative}
+.tcard{position:absolute;left:0;right:0;height:96px;border-radius:18px;padding:10px 12px;display:flex;align-items:center;gap:10px;
+  background:#fff;border:3px solid var(--c);box-shadow:0 5px 0 var(--c);transition:top .6s cubic-bezier(.5,1.6,.4,1),transform .3s}
+.tcard.turn{background:linear-gradient(135deg,#fff,color-mix(in srgb,var(--c) 22%,#fff));transform:scale(1.03)}
+.tcard.turn::after{content:"YOUR TURN";position:absolute;top:-11px;right:12px;background:var(--c);color:#fff;font-family:Fredoka;font-weight:600;font-size:11px;padding:2px 9px;border-radius:999px;letter-spacing:1px;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{transform:scale(1.1)}}
+.tcard .ava{width:54px;height:54px;border-radius:16px;background:var(--c);display:grid;place-items:center;font-size:32px;flex:none;box-shadow:inset 0 -4px 0 rgba(0,0,0,.15)}
+.tcard .info{flex:1;min-width:0}
+.tcard .nm{font-family:Fredoka;font-weight:600;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tcard .sc{font-family:Fredoka;font-weight:700;font-size:30px;line-height:1;color:var(--c)}
+.tcard .rank{position:absolute;top:-10px;left:-8px;width:30px;height:30px;border-radius:50%;background:#fff;border:3px solid var(--c);display:grid;place-items:center;font-family:Fredoka;font-weight:700;font-size:14px}
+.tcard .pw{font-size:12px;font-weight:800;color:#e8590c}
+.tcard .adj{display:flex;flex-direction:column;gap:4px;opacity:.25;transition:opacity .2s}
+.tcard:hover .adj{opacity:1}
+.tcard .adj button{width:34px;height:24px;border-radius:8px;background:#f1effc;font-weight:700;font-size:12px;color:var(--ink)}
+.floatpts{position:absolute;right:60px;top:10px;font-family:Fredoka;font-weight:700;font-size:28px;pointer-events:none;animation:floatUp 1.4s forwards}
+@keyframes floatUp{0%{opacity:0;transform:translateY(10px) scale(.6)}20%{opacity:1;transform:translateY(0) scale(1.2)}100%{opacity:0;transform:translateY(-40px) scale(1)}}
+.legend{background:rgba(255,255,255,.88);border-radius:var(--r);padding:12px 14px;font-size:13.5px;line-height:1.45;box-shadow:0 6px 0 rgba(90,80,160,.18)}
+.legend b{font-family:Fredoka;font-weight:600}
+.legend .row{display:flex;gap:8px;align-items:flex-start;margin:4px 0}
+.legend .ico{font-size:18px;width:24px;text-align:center}
+
+/* ---------- setup ---------- */
+.screen{position:absolute;inset:0;overflow:auto;padding:18px;display:flex;flex-direction:column;align-items:center}
+.panel{background:rgba(255,255,255,.93);border-radius:28px;padding:26px 30px;box-shadow:0 8px 0 rgba(90,80,160,.2);width:min(1000px,100%)}
+.hero{text-align:center;margin-bottom:16px}
+.hero .big{font-size:clamp(28px,3.4vw,52px);font-family:Fredoka;font-weight:700;line-height:1.05;
+  background:linear-gradient(90deg,#7048e8,#e64980,#f76707);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .sub{font-family:Fredoka;font-size:clamp(16px,1.6vw,24px);color:#5f3dc4;margin-top:4px}
+.story{background:#fff8e1;border:3px dashed #ffc23d;border-radius:18px;padding:12px 18px;font-size:16px;line-height:1.5;margin:12px 0 18px}
+.teams-set{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.tset{border-radius:20px;padding:14px;border:3px solid var(--c);background:color-mix(in srgb,var(--c) 10%,#fff)}
+.tset input{width:100%;font-family:Fredoka;font-size:18px;font-weight:600;padding:8px 10px;border-radius:12px;border:2px solid #ddd;margin:8px 0;color:var(--ink)}
+.emojis{display:flex;flex-wrap:wrap;gap:5px}
+.emojis button{width:38px;height:38px;border-radius:10px;background:#fff;font-size:22px;border:2px solid transparent}
+.emojis button.sel{border-color:var(--c);background:color-mix(in srgb,var(--c) 25%,#fff)}
+.opts{display:flex;flex-wrap:wrap;gap:18px;margin-top:18px;align-items:flex-start}
+.opt{flex:1;min-width:260px}
+.opt h4{font-family:Fredoka;font-size:17px;margin-bottom:8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:7px 12px;border-radius:999px;background:#f1effc;font-weight:800;font-size:13.5px;border:2px solid transparent;font-family:Nunito}
+.chip.on{background:#7048e8;color:#fff}
+.go{display:block;margin:22px auto 0;font-size:24px;font-weight:700;color:#fff;padding:14px 38px;border-radius:20px;
+  background:linear-gradient(135deg,#ff922b,#f03e3e);box-shadow:0 6px 0 #c92a2a;transition:transform .1s}
+.go:hover{transform:translateY(-3px) rotate(-1deg)}
+.go:active{transform:translateY(3px);box-shadow:0 3px 0 #c92a2a}
+.go.alt{background:linear-gradient(135deg,#4dabf7,#7048e8);box-shadow:0 6px 0 #5f3dc4}
+
+/* ---------- tower map ---------- */
+.mapwrap{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1.1fr;gap:10px;padding:14px 18px}
+.mapinfo{display:flex;flex-direction:column;justify-content:center;gap:14px}
+.mapinfo .panel{padding:20px 24px}
+.tower{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;padding-bottom:4px}
+.crown{width:46%;height:clamp(54px,9vh,90px);position:relative;display:grid;place-items:center;cursor:pointer;margin-bottom:-2px}
+.crown .dome{position:absolute;inset:0;background:linear-gradient(180deg,#ffe066,#fab005);border-radius:50% 50% 8px 8px / 90% 90% 8px 8px;box-shadow:inset 0 -8px 0 rgba(0,0,0,.12)}
+.crown .lbl{position:relative;font-family:Fredoka;font-weight:700;font-size:clamp(12px,1.2vw,17px);color:#7a4a00;text-align:center;line-height:1.1}
+.crown .flag{position:absolute;top:-34px;left:50%;font-size:30px;transform:translateX(-50%);animation:bob 2s infinite ease-in-out}
+.crown.locked{filter:grayscale(.6) brightness(.95)}
+@keyframes bob{50%{transform:translate(-50%,-6px)}}
+.slab{position:relative;height:clamp(46px,8.6vh,82px);border-radius:12px 12px 4px 4px;display:flex;align-items:center;gap:10px;padding:0 14px;
+  background:linear-gradient(180deg,var(--fc),color-mix(in srgb,var(--fc) 75%,#000));color:#fff;cursor:pointer;
+  box-shadow:inset 0 -6px 0 rgba(0,0,0,.18),0 3px 0 rgba(0,0,0,.08);transition:transform .2s;margin-top:4px}
+.slab:hover{transform:scale(1.03)}
+.slab .fi{width:clamp(34px,5.6vh,54px);height:clamp(34px,5.6vh,54px);border-radius:50%;background:rgba(255,255,255,.95);display:grid;place-items:center;font-size:clamp(18px,3vh,30px);flex:none}
+.slab .ft{flex:1;min-width:0;line-height:1.1}
+.slab .ft b{font-family:Fredoka;font-weight:600;font-size:clamp(12px,1.25vw,18px);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 2px 0 rgba(0,0,0,.2)}
+.slab .ft span{font-size:clamp(10px,.9vw,13px);font-weight:800;opacity:.95;text-transform:uppercase;letter-spacing:.6px}
+.slab .st{font-size:clamp(18px,2.4vh,26px);background:rgba(255,255,255,.9);border-radius:12px;padding:2px 8px;color:var(--ink);font-family:Fredoka;font-weight:600;white-space:nowrap}
+.slab .st small{font-size:12px}
+.slab.locked{filter:grayscale(.75) brightness(.85)}
+.slab.skipped{opacity:.45;filter:grayscale(1)}
+.slab.current{outline:4px solid #fff;outline-offset:2px;animation:glow 1.6s infinite}
+@keyframes glow{50%{box-shadow:0 0 0 8px rgba(255,255,255,.35),inset 0 -6px 0 rgba(0,0,0,.18)}}
+.slab .win{position:absolute;bottom:6px;width:8px;height:12px;border-radius:4px 4px 0 0;background:rgba(0,0,0,.18)}
+.ground{width:100%;height:24px;border-radius:50% 50% 0 0/100% 100% 0 0;background:linear-gradient(#69db7c,#37b24d);margin-top:-2px}
+.explorer{position:absolute;font-size:30px;transition:top 1s ease;z-index:3;filter:drop-shadow(0 3px 0 rgba(0,0,0,.2))}
+
+/* ---------- floor ---------- */
+.floorview{position:absolute;inset:0;display:flex;flex-direction:column;padding:16px 20px;gap:12px;
+  background:radial-gradient(circle at 20% 0%,color-mix(in srgb,var(--floor) 30%,#fff) 0%,var(--floorSoft) 45%,#fff 100%)}
+.floorview::before{content:"";position:absolute;inset:0;opacity:.08;pointer-events:none;
+  background-image:radial-gradient(var(--floorDark) 2px,transparent 2px);background-size:26px 26px}
+.fhead{display:flex;align-items:center;gap:14px;position:relative}
+.fhead .fic{width:64px;height:64px;border-radius:20px;background:var(--floor);display:grid;place-items:center;font-size:38px;box-shadow:0 5px 0 var(--floorDark)}
+.fhead h2{font-size:clamp(20px,2.2vw,34px);color:var(--floorDark);line-height:1}
+.fhead .tp{font-weight:900;font-size:clamp(12px,1vw,15px);text-transform:uppercase;letter-spacing:1.2px;color:var(--ink2)}
+.seal{position:relative;font-size:15px;background:#fff;border-radius:14px;padding:8px 14px;border-left:6px solid var(--floor);font-style:italic;color:var(--ink2)}
+.progress{display:flex;gap:6px;align-items:center;font-family:Fredoka;font-weight:600;color:var(--floorDark)}
+.progress .dots{display:flex;gap:4px}
+.progress .dots i{width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid var(--floor)}
+.progress .dots i.f{background:var(--floor)}
+.grid{position:relative;flex:1;display:grid;gap:clamp(10px,1.6vw,22px);align-content:center;justify-content:center;min-height:0}
+.grid.g9{grid-template-columns:repeat(3,minmax(0,clamp(110px,15vw,210px)));grid-auto-rows:clamp(80px,17vh,150px)}
+.grid.g6{grid-template-columns:repeat(3,minmax(0,clamp(120px,17vw,230px)));grid-auto-rows:clamp(100px,24vh,190px)}
+.tile{position:relative;perspective:800px;cursor:pointer}
+.tile .inner{position:absolute;inset:0;transition:transform .7s cubic-bezier(.4,1.6,.5,1);transform-style:preserve-3d}
+.tile.open .inner{transform:rotateY(180deg)}
+.tile .face{position:absolute;inset:0;border-radius:24px;backface-visibility:hidden;display:grid;place-items:center}
+.tile .front{background:linear-gradient(160deg,#fff 0%,color-mix(in srgb,var(--floor) 35%,#fff) 100%);border:4px solid var(--floor);box-shadow:0 8px 0 var(--floorDark)}
+.tile .front .num{width:clamp(50px,7vh,74px);height:clamp(50px,7vh,74px);border-radius:50%;background:#fff;border:4px dashed var(--floorDark);display:grid;place-items:center;
+  font-family:Fredoka;font-weight:700;font-size:clamp(26px,4vh,40px);color:var(--floorDark)}
+.tile .front .rune{position:absolute;top:8px;right:12px;font-size:18px;opacity:.6}
+.tile:not(.open):hover .inner{transform:translateY(-6px) rotate(-2deg)}
+.tile:not(.open):hover .front{box-shadow:0 14px 0 var(--floorDark)}
+.tile .back{transform:rotateY(180deg);background:#fff;border:4px solid #ddd;flex-direction:column;text-align:center;font-family:Fredoka;font-weight:600}
+.tile .back .bi{font-size:clamp(28px,5vh,46px);line-height:1}
+.tile .back .bt{font-size:clamp(11px,1vw,15px);margin-top:4px;color:var(--ink2);padding:0 6px}
+.tile.open{cursor:default}
+.tile.r-ok .back{border-color:var(--ok);background:#ebfbee}
+.tile.r-bad .back{border-color:var(--bad);background:#fff5f5}
+.tile.r-tre .back{border-color:#fab005;background:#fff9db}
+.tile.r-ch .back{border-color:#7048e8;background:#f3f0ff}
+
+/* ---------- modal ---------- */
+.ov{position:fixed;inset:0;z-index:50;background:rgba(43,35,80,.55);backdrop-filter:blur(4px);display:grid;place-items:center;padding:20px;animation:fadeIn .25s}
+@keyframes fadeIn{from{opacity:0}}
+.card{position:relative;width:min(1180px,96vw);max-height:94vh;overflow:auto;background:#fff;border-radius:30px;padding:26px 32px 24px;box-shadow:0 12px 0 rgba(0,0,0,.18);animation:pop .45s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pop{from{transform:scale(.6) rotate(-3deg);opacity:0}}
+.qtop{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pill{font-family:Fredoka;font-weight:600;font-size:15px;padding:6px 14px;border-radius:999px;color:#fff;background:var(--pc,#7048e8);box-shadow:0 3px 0 rgba(0,0,0,.15)}
+.qteam{font-family:Fredoka;font-weight:600;font-size:17px;display:inline-flex;vertical-align:middle;align-items:center;gap:6px}
+.qteam .dot{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-size:18px}
+.qtext{font-family:Fredoka;font-weight:500;font-size:clamp(22px,2.5vw,38px);line-height:1.3;margin:20px 0 22px;color:var(--ink)}
+.blank{display:inline-block;min-width:150px;border-bottom:4px dashed #7048e8;text-align:center;color:#7048e8;font-weight:700;padding:0 6px;line-height:1.1}
+.blank.filled{border-bottom-style:solid;background:#e5dbff;border-radius:8px 8px 0 0;animation:pop .5s}
+.optgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.optgrid.tf{grid-template-columns:1fr 1fr}
+.ob{position:relative;display:flex;align-items:center;gap:14px;text-align:left;padding:16px 18px;border-radius:20px;color:#fff;font-family:Fredoka;font-weight:600;font-size:clamp(17px,1.7vw,26px);
+  background:var(--oc);box-shadow:0 6px 0 color-mix(in srgb,var(--oc) 70%,#000);transition:transform .12s,opacity .3s,filter .3s;min-height:76px}
+.ob:hover:not(:disabled){transform:translateY(-3px)}
+.ob .sh{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.28);display:grid;place-items:center;font-size:22px;flex:none}
+.ob.dim{opacity:.35;filter:grayscale(.6)}
+.ob.right{outline:6px solid var(--ok);outline-offset:3px;animation:bounce .6s}
+.ob.wrong{outline:6px solid var(--bad);outline-offset:3px;animation:shake .5s}
+.ob .mk{position:absolute;right:14px;font-size:34px}
+.ob:disabled{cursor:default}
+@keyframes bounce{30%{transform:scale(1.06)}60%{transform:scale(.98)}}
+@keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.answerbox{margin-top:18px;border-radius:20px;padding:14px 18px;background:#f3f0ff;border:3px solid #b197fc;animation:pop .4s}
+.answerbox .al{font-family:Fredoka;font-weight:700;font-size:clamp(20px,2vw,30px);color:#5f3dc4}
+.answerbox .ex{font-size:clamp(15px,1.2vw,18px);margin-top:4px;color:var(--ink2)}
+.ctrl{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:18px}
+.btn{font-weight:600;font-size:18px;padding:11px 20px;border-radius:16px;color:#fff;background:var(--bc,#7048e8);box-shadow:0 5px 0 color-mix(in srgb,var(--bc,#7048e8) 65%,#000);transition:transform .1s}
+.btn:hover{transform:translateY(-2px)}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 color-mix(in srgb,var(--bc,#7048e8) 65%,#000)}
+.btn.ghost{background:#f1effc;color:var(--ink);box-shadow:0 5px 0 #c7c2e6}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+.judge{margin-top:16px;padding:14px 16px;border-radius:20px;background:#fff9db;border:3px dashed #fab005}
+.judge h4{font-family:Fredoka;font-size:21px;margin-bottom:10px}
+.judge .row{display:flex;gap:10px;flex-wrap:wrap}
+.timer{position:absolute;top:18px;right:24px;width:96px;height:96px}
+.timer svg{width:100%;height:100%;transform:rotate(-90deg)}
+.timer .tn{position:absolute;inset:0;display:grid;place-items:center;font-family:Fredoka;font-weight:700;font-size:36px}
+.timer.warn .tn{color:var(--bad);animation:pulse .5s infinite}
+.timesup{font-family:Fredoka;font-weight:700;color:var(--bad);font-size:22px;animation:shake .5s}
+
+/* treasure & challenge */
+.special{text-align:center}
+.special .big{font-size:clamp(70px,12vh,120px);line-height:1;animation:wiggle 1.2s infinite}
+@keyframes wiggle{25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+.special h2{font-size:clamp(28px,3vw,44px);margin:8px 0}
+.reel{margin:18px auto;width:min(620px,90%);height:120px;border-radius:24px;background:linear-gradient(135deg,#fff3bf,#ffe066);border:5px solid #fab005;display:grid;place-items:center;overflow:hidden;box-shadow:inset 0 -8px 0 rgba(0,0,0,.08)}
+.reel .ri{font-family:Fredoka;font-weight:700;font-size:clamp(22px,2.4vw,34px);color:#7a4a00;display:flex;align-items:center;gap:14px}
+.reel .ri span{font-size:52px}
+.reel.done{animation:bounce .6s;border-color:#f08c00}
+.chtext{font-family:Fredoka;font-weight:500;font-size:clamp(20px,2.2vw,32px);line-height:1.35;background:#f3f0ff;border-radius:22px;padding:18px 22px;margin:14px auto;max-width:900px;border:3px solid #b197fc}
+.steal{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.tbtn2{padding:12px 18px;border-radius:16px;color:#fff;font-weight:600;font-size:19px;background:var(--c);box-shadow:0 5px 0 color-mix(in srgb,var(--c) 65%,#000);display:flex;gap:8px;align-items:center}
+
+/* cleared / final / victory */
+.door{width:220px;height:260px;margin:10px auto;position:relative;perspective:600px}
+.door .fr{position:absolute;inset:0;border-radius:110px 110px 10px 10px;background:#2b2350;overflow:hidden;display:grid;place-items:center;font-size:80px}
+.door .lf,.door .rt{position:absolute;top:0;bottom:0;width:50%;background:linear-gradient(90deg,#8d5524,#b07d4b);border:4px solid #5c3a1a;transition:transform 1.6s ease .4s}
+.door .lf{left:0;border-radius:110px 0 0 10px;transform-origin:left}
+.door .rt{right:0;border-radius:0 110px 10px 0;transform-origin:right}
+.door.open .lf{transform:rotateY(-105deg)}
+.door.open .rt{transform:rotateY(105deg)}
+.wager{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:16px 0}
+.wcard{border:3px solid var(--c);border-radius:20px;padding:14px;text-align:center;background:color-mix(in srgb,var(--c) 8%,#fff)}
+.wcard .wv{font-family:Fredoka;font-weight:700;font-size:40px;color:var(--c)}
+.wcard .wb{display:flex;gap:8px;justify-content:center;margin-top:6px}
+.wcard .wb button{width:46px;height:40px;border-radius:12px;background:#fff;border:2px solid var(--c);font-weight:700;font-size:18px;color:var(--ink)}
+.wcard .judge2{display:flex;gap:8px;justify-content:center;margin-top:10px}
+.wcard .judge2 button{flex:1;padding:8px;border-radius:12px;font-weight:600;font-size:16px;background:#f1effc;color:var(--ink)}
+.wcard .judge2 button.on.y{background:var(--ok);color:#fff}
+.wcard .judge2 button.on.n{background:var(--bad);color:#fff}
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:16px;margin-top:20px}
+.pcol{width:min(220px,26vw);text-align:center}
+.pcol .pa{font-size:56px;animation:bob2 1.5s infinite ease-in-out}
+@keyframes bob2{50%{transform:translateY(-8px)}}
+.pcol .pn{font-family:Fredoka;font-weight:600;font-size:20px}
+.pcol .ps{font-family:Fredoka;font-weight:700;font-size:28px}
+.pcol .blk{border-radius:16px 16px 0 0;margin-top:8px;display:grid;place-items:center;font-family:Fredoka;font-weight:700;font-size:54px;color:#fff;box-shadow:inset 0 -10px 0 rgba(0,0,0,.15)}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:80}
+.toast{position:fixed;left:50%;top:18px;transform:translateX(-50%);z-index:90;background:#2b2350;color:#fff;font-family:Fredoka;font-weight:500;font-size:18px;padding:12px 22px;border-radius:16px;animation:pop .3s;box-shadow:0 6px 0 rgba(0,0,0,.2)}
+.menu{position:absolute;right:18px;top:64px;z-index:40;background:#fff;border-radius:18px;padding:8px;box-shadow:0 10px 30px rgba(0,0,0,.18);display:flex;flex-direction:column;min-width:230px}
+.menu button{text-align:left;padding:10px 12px;border-radius:12px;background:none;font-size:16px;font-weight:500;color:var(--ink)}
+.menu button:hover{background:#f1effc}
+.kbd{font-family:Nunito;font-size:12px;background:#eee;border-radius:6px;padding:1px 6px;color:#555}
+@media (max-width:900px){.main{grid-template-columns:1fr}.side{display:none}.mapwrap{grid-template-columns:1fr}.mapinfo{display:none}.optgrid{grid-template-columns:1fr}.teams-set{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="sky" id="sky"></div>
+<div id="app">
+  <div class="topbar">
+    <div class="logo"><div class="badge">🏯</div><div><h1>The Ancient Tower Expedition</h1><small>Decode the Origin of Scientific Life</small></div></div>
+    <div class="spacer"></div>
+    <button class="tbtn" id="bMap" title="Tower map">🗺️ Tower</button>
+    <button class="tbtn" id="bSound" title="Sound on/off">🔊</button>
+    <button class="tbtn" id="bFull" title="Full screen">⛶</button>
+    <button class="tbtn" id="bMenu" title="Teacher menu">☰</button>
+  </div>
+  <div class="main">
+    <div class="stage" id="stage"></div>
+    <div class="side">
+      <div class="board"><h3>🏆 Leaderboard</h3><div class="board-list" id="board"></div></div>
+      <div class="legend" id="legend"></div>
+    </div>
+  </div>
+</div>
+<div id="menuHost"></div>
+<div id="modal"></div>
+<canvas id="confetti"></canvas>
+
+<script>
+/* =========================================================
+   DATA — Marshall Cavendish Science 8 (Cambridge Lower Secondary), Chapters 1–7
+   ========================================================= */
+const FLOORS = [
+ {n:1, topic:"Diet and Growth", name:"The Garden of Nourishment", icon:"🍎", c:"#51cf66", d:"#2b8a3e", s:"#ebfbee",
+  seal:"Thorny vines of hunger wrap the first door. Only explorers who know what feeds life can cut them away!"},
+ {n:2, topic:"Human Body Systems", name:"The Hall of the Living Machine", icon:"🫀", c:"#ff6b6b", d:"#c92a2a", s:"#fff5f5",
+  seal:"A giant stone heart beats behind this door. Prove you understand bones, breath and blood to make it open."},
+ {n:3, topic:"Ecosystems", name:"The Jungle Sanctuary", icon:"🌿", c:"#20c997", d:"#087f5b", s:"#e6fcf5",
+  seal:"Roots, rivers and creatures guard this level. Show that you respect the web of life to pass."},
+ {n:4, topic:"The Structure of an Atom", short:"Structure of an Atom", name:"The Atomic Vault", icon:"⚛️", c:"#7950f2", d:"#5f3dc4", s:"#f3f0ff",
+  seal:"Glowing electrons whirl around the lock. Only those who know what is inside an atom can stop them."},
+ {n:5, topic:"Mixtures and Solubility", short:"Mixtures & Solubility", name:"The Crystal Labyrinth", icon:"🧪", c:"#22b8cf", d:"#0b7285", s:"#e3fafc",
+  seal:"Mixed-up potions flood the corridors. Separate the truth from the mixture to find the way out."},
+ {n:6, topic:"Chemical Reactivity", name:"The Metal Forge", icon:"⚒️", c:"#ff922b", d:"#d9480f", s:"#fff4e6",
+  seal:"Bubbling acids and fizzing metals block the forge. Know which metals react – and which stay calm!"},
+ {n:7, topic:"Exothermic and Endothermic Changes", short:"Exo & Endothermic", name:"The Fire & Ice Summit", icon:"🔥", c:"#f06595", d:"#a61e4d", s:"#fff0f6",
+  seal:"Half of this summit burns, half is frozen. Master the energy of change to reach the Crown Chamber."}
+];
+
+const Q = {
+1:[
+ {t:"mcq",q:"Which nutrient is needed to repair damaged cells and make new ones?",o:["Carbohydrates","Proteins","Fats and oils","Fibre"],a:1,x:"Proteins are needed for growth and repair. They are also used to make enzymes and hormones."},
+ {t:"tf",q:"Fibre is a nutrient and a good source of energy.",a:false,x:"False. Fibre is NOT a nutrient or a source of energy because it cannot be digested and absorbed. It helps move waste through the digestive system."},
+ {t:"fill",q:"Vitamin D helps our bodies absorb ___, which builds strong bones and teeth.",a:"calcium",x:"Our bodies also make vitamin D when our skin is exposed to sunlight."},
+ {t:"short",q:"Name the mineral our body needs to make haemoglobin in red blood cells.",a:"Iron",x:"Haemoglobin transports oxygen around the body. A lack of iron causes tiredness and weakness."},
+ {t:"mcq",q:"A deficiency of vitamin C can cause…",o:["difficulty seeing in low light","bleeding and swollen gums","soft bones in adults","tingling in fingers and toes"],a:1,x:"Vitamin C keeps gums healthy, helps cuts heal and helps the body absorb iron."},
+ {t:"fill",q:"___ is a disease caused by a severe lack of protein. It makes the abdomen swell.",a:"Kwashiorkor",x:"It is a type of malnutrition – not getting the right amounts of nutrients."},
+ {t:"mcq",q:"On the healthy eating plate, how much of the plate should be fruit and vegetables?",o:["¼","⅓","½","¾"],a:2,x:"½ fruit and vegetables, ¼ starchy foods (wholemeal is best), ¼ protein sources."},
+ {t:"mcq",q:"On average, how much water should we drink every day?",o:["0.5 litres","1.5 to 2 litres","4 to 5 litres","10 litres"],a:1,x:"That is about 6 to 8 glasses. We need more on hot days or when exercising."},
+ {t:"short",q:"Which gas in tobacco smoke reduces the ability of the blood to transport oxygen?",a:"Carbon monoxide",x:"Nicotine is addictive; tar builds up in the lungs and increases the risk of lung cancer."},
+ {t:"tf",q:"Fats and oils have more than double the energy value of carbohydrates.",a:true,x:"True! But almost all our energy still comes from starch and other carbohydrates."},
+ {t:"short",q:"The body stores one type of carbohydrate in the liver. What is it called?",a:"Glycogen",x:"Most of our stored energy, however, is in the form of fats."},
+ {t:"fill",q:"If we take in more energy than we use, the extra energy is stored as ___ and we may become overweight.",a:"fat",x:"Too much fat can lead to obesity, which can cause high blood pressure, heart disease and a type of diabetes."},
+ {t:"mcq",q:"Which vitamin helps keep our eyes and skin healthy and is found in carrots and pumpkin?",o:["Vitamin A","Vitamin C","Vitamin D","Vitamin K"],a:0,x:"A lack of vitamin A can cause difficulty seeing in low light and dry skin."},
+ {t:"short",q:"Starch is a complex carbohydrate. Name TWO foods rich in starch.",a:"e.g. bread, rice, pasta, oats, potatoes, corn",x:"Starch is the major source of energy in the body."}
+],
+2:[
+ {t:"mcq",q:"Which type of joint lets bones move in many directions, even in a complete circle?",o:["Hinge joint","Fixed joint","Ball-and-socket joint","Pivot joint"],a:2,x:"Examples: the shoulder joint and the hip joint."},
+ {t:"short",q:"What are the tough cords that attach muscles to bones called?",a:"Tendons",x:"A muscle attached to a bone by a tendon is called a skeletal muscle."},
+ {t:"fill",q:"Muscles that work in pairs and pull in opposite directions are called ___ muscles.",a:"antagonistic",x:"Example: the biceps and triceps in your arm."},
+ {t:"tf",q:"Muscles can both pull and push bones.",a:false,x:"False. Muscles can only PULL on bones (by contracting). That is why they work in antagonistic pairs."},
+ {t:"mcq",q:"Which of these is a HINGE joint?",o:["Shoulder","Hip","Knee","Skull"],a:2,x:"Hinge joints (elbow, knee, finger, toe) allow back-and-forth movement in one direction, like a door hinge."},
+ {t:"mcq",q:"What happens to the diaphragm when we breathe IN?",o:["It relaxes and moves upwards","It contracts and moves downwards","It contracts and moves upwards","It does not move"],a:1,x:"The intercostal muscles also contract, pulling the ribs up and out. The lungs expand and air rushes in."},
+ {t:"fill",q:"Gas exchange happens in tiny air sacs in the lungs called ___.",a:"alveoli",x:"Oxygen diffuses from the alveoli into the blood; carbon dioxide diffuses from the blood into the alveoli."},
+ {t:"mcq",q:"About what percentage of EXHALED air is carbon dioxide?",o:["0.04%","4%","16%","21%"],a:1,x:"Inhaled air has only about 0.04% carbon dioxide. Exhaled air has about 4%."},
+ {t:"fill",q:"Complete the word equation for aerobic respiration: glucose + oxygen → ___ + water",a:"carbon dioxide",x:"Energy is released from glucose in a controlled way."},
+ {t:"mcq",q:"In which part of the cell does aerobic respiration take place?",o:["Nucleus","Cell membrane","Mitochondria","Vacuole"],a:2,x:"Aerobic respiration occurs in the mitochondria of plant and animal cells."},
+ {t:"short",q:"Some white blood cells wrap themselves around pathogens to destroy them. What is this process called?",a:"Phagocytosis",x:"Other white blood cells make antibodies to disable microorganisms."},
+ {t:"tf",q:"Red blood cells have no nucleus, so there is more space for haemoglobin.",a:true,x:"True. Their biconcave disc shape also gives a large surface area to take in and release oxygen quickly."},
+ {t:"mcq",q:"People with which blood type are known as universal donors?",o:["AB positive","O negative","A negative","B positive"],a:1,x:"O negative blood can be given to people of any blood type. AB positive people are universal recipients."},
+ {t:"short",q:"Which type of blood vessel carries oxygenated blood away from the heart to the body?",a:"Arteries",x:"Veins carry blood back to the heart. Capillaries connect arteries to veins."},
+ {t:"tf",q:"Breathing and respiration are the same process.",a:false,x:"False. Breathing is a PHYSICAL process (moving air in and out of the lungs). Respiration is a CHEMICAL process in cells."}
+],
+3:[
+ {t:"mcq",q:"A group of organisms of ONE species living in an area is called a…",o:["community","population","habitat","ecosystem"],a:1,x:"A community is all the populations of different species in the same area."},
+ {t:"fill",q:"The place where a particular organism lives and thrives is called its ___.",a:"habitat",x:"A forest ecosystem contains many habitats – a beetle may live in the bark of a tree."},
+ {t:"tf",q:"An ecosystem includes the interactions between organisms AND non-living factors such as light, water and temperature.",a:true,x:"True. Ecosystems can be as big as a mountain range or as small as a glass container."},
+ {t:"mcq",q:"Which adaptation helps a dolphin slow down heat loss?",o:["Streamlined body","Blowhole on top of its head","Layer of blubber under the skin","Strong tail"],a:2,x:"Blubber is a thick layer of fat directly under the skin of marine mammals."},
+ {t:"short",q:"Dolphins live in groups called pods. Is this a PHYSICAL or a BEHAVIOURAL adaptation?",a:"Behavioural",x:"Behavioural adaptations describe how an organism does things. Physical adaptations are body features."},
+ {t:"short",q:"What do we call a non-native species that causes a lot of harm to its new ecosystem?",a:"An invasive species",x:"Example: the Nile perch in Lake Victoria made many native fish species extinct."},
+ {t:"fill",q:"The slow build-up of toxic substances in a living organism's body is called ___.",a:"bioaccumulation",x:"It happens when toxic substances (e.g. mercury) cannot be broken down or excreted."},
+ {t:"short",q:"The amount of mercury gets higher and higher along a food chain. What is this process called?",a:"Biomagnification",x:"People may get mercury poisoning when they eat contaminated fish."},
+ {t:"mcq",q:"Which gases dissolve in clouds and cause acid rain?",o:["Oxygen and nitrogen","Sulfur dioxide and nitrogen oxides","Methane and water vapour","Helium and argon"],a:1,x:"Sulfur dioxide comes from factories; nitrogen oxides come from vehicle engines."},
+ {t:"tf",q:"Microplastics are tiny pieces of plastic smaller than a grain of rice.",a:true,x:"True. Fish eat them because they look like food – so microplastics enter the food chain."},
+ {t:"fill",q:"The cutting down and clearing of forests is called ___.",a:"deforestation",x:"It destroys habitats, and since forests are carbon sinks, it adds to climate change."},
+ {t:"mcq",q:"Fertilisers washing into a lake can cause algae to overgrow and block sunlight. This is called…",o:["an oil spill","an algal bloom","acid rain","habitat fragmentation"],a:1,x:"Underwater plants cannot photosynthesise and die, and the animals that feed on them may also die."},
+ {t:"short",q:"When garbage in a landfill breaks down, which greenhouse gas does it produce?",a:"Methane",x:"So land pollution can lead to air pollution and global warming."},
+ {t:"mcq",q:"Removing more fish than can reproduce (overfishing) is an example of…",o:["overexploitation","bioaccumulation","habitat fragmentation","pollination"],a:0,x:"Overexploitation can make species endangered or even extinct."}
+],
+4:[
+ {t:"mcq",q:"Which particles are found in the nucleus of an atom?",o:["Protons and electrons","Electrons and neutrons","Protons and neutrons","Only electrons"],a:2,x:"Electrons move around the nucleus in shells."},
+ {t:"tf",q:"Neutrons have a positive charge.",a:false,x:"False. Neutrons are neutral (no charge). Protons are positive and electrons are negative."},
+ {t:"fill",q:"Electrons are held in the atom by the ___ force between unlike charges.",a:"electrostatic",x:"Opposite charges attract: the positive protons pull on the negative electrons."},
+ {t:"short",q:"The atomic number tells us the number of which particle in the nucleus?",a:"Protons",x:"In a neutral atom it also tells us the number of electrons."},
+ {t:"mcq",q:"An oxygen atom has 8 electrons. How many electrons are in its OUTER shell?",o:["2","4","6","8"],a:2,x:"2 electrons in the inner shell + 6 in the outer shell."},
+ {t:"mcq",q:"Who described the atom as the 'plum pudding' model?",o:["John Dalton","J. J. Thomson","Ernest Rutherford","Niels Bohr"],a:1,x:"Thomson (1904): negative electrons stuck inside a positive 'soup'."},
+ {t:"mcq",q:"In Rutherford's gold foil experiment, what happened to MOST alpha particles?",o:["They bounced straight back","They passed right through the foil","They were absorbed by the foil","They turned into electrons"],a:1,x:"So an atom is mostly empty space with a small, dense, positive nucleus."},
+ {t:"short",q:"Which scientist (1932) proposed the neutron and explained the mass of an atom?",a:"James Chadwick",x:"His model completed the basic picture: protons, neutrons and electrons."},
+ {t:"fill",q:"Atoms of the same element with different numbers of neutrons are called ___.",a:"isotopes",x:"Example: carbon-12, carbon-13 and carbon-14."},
+ {t:"short",q:"Carbon-14 has 6 protons. How many neutrons does it have?",a:"8 neutrons",x:"14 − 6 = 8. Carbon-14 is used to estimate the age of things that were once alive."},
+ {t:"tf",q:"An atom is electrically neutral because it has equal numbers of protons and electrons.",a:true,x:"True. The positive and negative charges are balanced."},
+ {t:"mcq",q:"Whose model showed electrons as a 'cloud' around the nucleus instead of in definite shells?",o:["Dalton","Bohr","Schrödinger","Chadwick"],a:2,x:"Schrödinger (1926) used complex mathematics to describe where each electron is."},
+ {t:"mcq",q:"The first shell can hold up to ___ electrons, and the second shell up to ___ electrons.",o:["2 and 8","8 and 8","2 and 6","1 and 8"],a:0,x:"An atom is most stable when its outermost shell is full."},
+ {t:"short",q:"Sodium has 1 electron in its outermost shell. Does it easily LOSE or GAIN this electron?",a:"It loses it",x:"Losing that electron gives sodium a full outermost shell, so sodium is very reactive."}
+],
+5:[
+ {t:"mcq",q:"Which of these is a HOMOGENEOUS mixture?",o:["Sand and water","Oil and water","Salt dissolved in water","Soil"],a:2,x:"Homogeneous mixtures are uniform – you cannot see the different parts. Air and steel are also examples."},
+ {t:"tf",q:"A compound is a pure substance.",a:true,x:"True. A compound is made up of one type of molecule, e.g. water (H₂O) or common salt (NaCl)."},
+ {t:"fill",q:"In sugar solution, sugar is the ___ and water is the solvent.",a:"solute",x:"The solute is the 'stuff to be dissolved'; the solvent does the dissolving."},
+ {t:"mcq",q:"A bronze coin has a mass of 75 g. It contains 62 g of copper. What is the percentage purity of copper?",o:["62%","75%","About 82.7%","About 121%"],a:2,x:"Percentage purity = (62 ÷ 75) × 100% ≈ 82.67%"},
+ {t:"mcq",q:"Which method separates an insoluble solid from a liquid?",o:["Filtration","Evaporation","Distillation","Handpicking"],a:0,x:"The liquid passes through as the filtrate; the solid stays on the filter paper as the residue."},
+ {t:"short",q:"Which separation technique is used to separate the different dyes in an ink?",a:"Paper chromatography",x:"The dyes travel up the paper at different speeds and become separated."},
+ {t:"fill",q:"In chromatography, the paper with the separated components is called a ___.",a:"chromatogram",x:"A pure substance gives only ONE spot on the chromatogram."},
+ {t:"mcq",q:"Distillation separates substances because they have different…",o:["colours","sizes","boiling points","masses"],a:2,x:"The substance with the lowest boiling point evaporates first, then condenses into the distillate."},
+ {t:"short",q:"5 g of sugar is dissolved to make 100 cm³ of solution. What is the concentration?",a:"0.05 g/cm³",x:"Concentration = mass of solute ÷ volume of solution = 5 ÷ 100"},
+ {t:"tf",q:"The solubility of most solids in liquids DECREASES as temperature increases.",a:false,x:"False. For most solids, solubility INCREASES with temperature – that's why sugar dissolves better in hot tea."},
+ {t:"fill",q:"A solution that cannot dissolve any more solute at that temperature is ___.",a:"saturated",x:"Unsaturated → saturated → supersaturated (crystals form)."},
+ {t:"short",q:"Which method would you use to get salt back from salt solution?",a:"Evaporation",x:"Heating makes the solvent (water) evaporate, leaving the solute (salt) behind."},
+ {t:"tf",q:"Salt water is a heterogeneous mixture.",a:false,x:"False. Salt water is uniform throughout, so it is a homogeneous mixture."},
+ {t:"mcq",q:"Which of these is an ELEMENT?",o:["Water","Common salt","Copper","Air"],a:2,x:"Elements cannot be broken down into simpler substances by chemical reactions. There are 118 known elements."}
+],
+6:[
+ {t:"fill",q:"Complete the general word equation: metal + oxygen → ___",a:"metal oxide",x:"Example: magnesium + oxygen → magnesium oxide"},
+ {t:"fill",q:"Complete the general word equation: metal + water → metal hydroxide + ___",a:"hydrogen",x:"Example: calcium + water → calcium hydroxide + hydrogen"},
+ {t:"mcq",q:"Why are sodium and potassium stored in oil?",o:["To keep them shiny for jewellery","To stop air (oxygen) reaching them","To make them react faster","Because they are liquids"],a:1,x:"They react so quickly with oxygen in the air that they must be kept in oil."},
+ {t:"mcq",q:"Which of these metals is the MOST reactive?",o:["Copper","Zinc","Potassium","Iron"],a:2,x:"Reactivity series: potassium > sodium > calcium > magnesium > zinc > iron > copper > silver > gold"},
+ {t:"tf",q:"Gold reacts with dilute acids to produce hydrogen gas.",a:false,x:"False. Gold and silver do not react with oxygen, water or dilute acids."},
+ {t:"short",q:"What word describes a substance that does not react with any other substance?",a:"Inert",x:"Gold and silver are inert – they keep their shine, so they are used for jewellery and coins."},
+ {t:"short",q:"Copper is heated in oxygen. What COLOUR is the copper oxide formed?",a:"Black",x:"Copper reacts only very slowly, and only when heated."},
+ {t:"mcq",q:"magnesium + hydrochloric acid → ?",o:["magnesium oxide + water","magnesium chloride + hydrogen","magnesium hydroxide + hydrogen","magnesium sulfate + hydrogen"],a:1,x:"metal + dilute acid → metal salt + hydrogen. Hydrochloric acid makes chlorides."},
+ {t:"fill",q:"zinc + sulfuric acid → zinc ___ + hydrogen",a:"sulfate",x:"Sulfuric acid makes sulfates; nitric acid makes nitrates."},
+ {t:"fill",q:"Magnesium reacts with HOT water to form magnesium ___ and hydrogen – an anomaly!",a:"oxide",x:"With cold water it forms magnesium hydroxide slowly. With hot water the product is unexpected."},
+ {t:"tf",q:"When calcium reacts with water, a milky white precipitate of calcium hydroxide forms.",a:true,x:"True. Hydrogen gas is released and the solution is alkaline."},
+ {t:"short",q:"Coating steel with zinc to stop it from rusting is called…",a:"Galvanisation",x:"A layer of zinc oxide stops moisture and air from reaching the steel."},
+ {t:"mcq",q:"Which rare metal is used in catalytic converters in cars?",o:["Iron","Platinum","Sodium","Zinc"],a:1,x:"Platinum, palladium and rhodium act as catalysts – they speed up reactions without being changed."},
+ {t:"mcq",q:"Universal Indicator is added to the solution formed when sodium reacts with water. The solution is…",o:["acidic","neutral","alkaline","a metal"],a:2,x:"Metal hydroxides such as sodium hydroxide are alkalis."}
+],
+7:[
+ {t:"fill",q:"An ___ reaction releases energy to the surroundings, so the temperature rises.",a:"exothermic",x:"'Exo' means out and 'thermic' means heat."},
+ {t:"mcq",q:"Which of these is an ENDOTHERMIC reaction?",o:["Combustion","Neutralisation","Photosynthesis","Rusting"],a:2,x:"Plants take in light energy: carbon dioxide + water → glucose + oxygen."},
+ {t:"tf",q:"Water freezing into ice is an endothermic process.",a:false,x:"False. Freezing RELEASES heat, so it is exothermic. Melting is endothermic."},
+ {t:"mcq",q:"Cold packs contain a salt that dissolves endothermically. Which one?",o:["Ammonium chloride","Calcium chloride","Sodium hydroxide","Copper sulfate"],a:0,x:"Calcium chloride and sodium hydroxide dissolve EXOthermically (used in heat packs)."},
+ {t:"fill",q:"copper carbonate → (heat) → copper oxide + ___",a:"carbon dioxide",x:"This is a thermal decomposition – an endothermic reaction."},
+ {t:"short",q:"Plaster of Paris feels warm as it sets with water. Is this exothermic or endothermic?",a:"Exothermic",x:"It forms gypsum and releases heat."},
+ {t:"mcq",q:"A reaction between an acid and an alkali to form a salt and water is called…",o:["combustion","decomposition","neutralisation","photosynthesis"],a:2,x:"Neutralisation is an exothermic reaction."},
+ {t:"tf",q:"In an endothermic reaction, the products have MORE energy than the reactants.",a:true,x:"True. Energy is taken in from the surroundings, so the surroundings get colder."},
+ {t:"short",q:"Sweat cools your skin. Which endothermic process is happening?",a:"Evaporation",x:"Evaporation absorbs heat from the surroundings (your skin)."},
+ {t:"mcq",q:"Mia mixed solid D with water. The temperature fell from 20°C to 16°C. The change was…",o:["exothermic","endothermic","neither","a combustion"],a:1,x:"A temperature DROP means heat was taken in from the surroundings."},
+ {t:"fill",q:"Crystallisation from a supersaturated solution ___ heat, so it is used in some heat packs.",a:"releases",x:"Crystallisation is an exothermic process."},
+ {t:"mcq",q:"Baking bread or a cake is an example of…",o:["an exothermic reaction","an endothermic reaction","freezing","neutralisation"],a:1,x:"The dough absorbs heat from the oven and chemical reactions take place."},
+ {t:"short",q:"Is dissolving a PHYSICAL change or a CHEMICAL change?",a:"Physical change",x:"No new substance is formed when a solid dissolves."},
+ {t:"tf",q:"Aerobic respiration is an exothermic reaction.",a:true,x:"True. glucose + oxygen → carbon dioxide + water, releasing energy for life processes."}
+]};
+
+const CHALLENGES = {
+1:["🥦 FOOD RUSH! In 20 seconds, name 5 foods rich in PROTEIN.","🍽️ PLATE BUILDERS! In 30 seconds, design a balanced meal and say which part of the healthy plate each food fills (½, ¼, ¼).","🏃 HEALTHY HABITS! In 20 seconds, name 2 healthy habits and 3 unhealthy habits."],
+2:["💪 ACT IT OUT! Show how your arm bends and straightens. Say which muscle CONTRACTS each time (biceps / triceps).","🦴 BODY MAP! Point to and name 2 ball-and-socket joints and 3 hinge joints on your body.","🌬️ AIR JOURNEY! In 20 seconds, say the path of air from the nose to the alveoli in the correct order."],
+3:["🌍 ECO EXPRESS! In 15 seconds, name the 5 types of ecosystems from the book.","🐬 DOLPHIN DESIGNER! In 30 seconds, name 4 physical adaptations of a dolphin.","♻️ POLLUTION PATROL! In 30 seconds, name 4 causes of water pollution."],
+4:["⚛️ ATOM ARTIST! In 30 seconds, draw a carbon atom showing 6 protons, 6 neutrons and the electrons in the correct shells.","🧑‍🔬 SCIENTIST TIMELINE! Put these in order: Bohr, Dalton, Chadwick, Thomson, Rutherford, Schrödinger.","🎭 HUMAN ATOM! Use your team members to act out a helium atom (2 protons, 2 neutrons, 2 electrons)."],
+5:["🧪 SEPARATION MASTERS! In 20 seconds, name 5 methods of separating mixtures.","🥗 MIXTURE SORT! In 30 seconds, give 2 homogeneous and 2 heterogeneous mixtures from daily life.","🌈 INK DETECTIVE! Explain in 30 seconds how to set up a paper chromatography experiment."],
+6:["⚒️ REACTIVITY CHANT! In 20 seconds, say the reactivity series from potassium down to gold.","🧾 EQUATION WRITERS! In 30 seconds, write the word equation for iron + hydrochloric acid.","🎭 METAL MIME! Act out how potassium, magnesium and gold behave in water. The class guesses each metal!"],
+7:["🔥❄️ FIRE OR ICE? In 20 seconds, name 2 exothermic and 2 endothermic processes.","🧊 COLD PACK ENGINEERS! In 30 seconds, explain how a cold pack works using the word 'endothermic'.","🌡️ THERMOMETER TALE! In 30 seconds, explain how a thermometer tells you if a reaction is exothermic or endothermic."]
+};
+
+const FINAL_Q = [
+ {q:"An atom has 11 protons and 12 neutrons. (a) Name the element. (b) How many electrons does it have? (c) What happens to its outermost electron when it reacts?",a:"(a) Sodium (b) 11 electrons (c) It is lost (given away), so the atom gets a full outer shell."},
+ {q:"Name the process that releases energy from glucose in the mitochondria, write its word equation, and say whether it is exothermic or endothermic.",a:"Aerobic respiration: glucose + oxygen → carbon dioxide + water. It is exothermic."},
+ {q:"Mercury from a factory enters the sea. Explain why a large fish at the end of the food chain is in more danger than plankton. Use TWO key words.",a:"Bioaccumulation – mercury builds up in each organism because it cannot be broken down or excreted. Biomagnification – the amount gets higher at each level of the food chain."},
+ {q:"You have salty, sandy water. Name the TWO separation methods (in order) to get pure dry salt, and say whether the salt water is homogeneous or heterogeneous.",a:"1) Filtration to remove the sand  2) Evaporation to get the salt. Salt water is a homogeneous mixture."}
+];
+
+const TREASURES = [
+ {id:"gold",icon:"💰",name:"Golden Relic",desc:"+150 points for your team!"},
+ {id:"double",icon:"✨",name:"Double Rune",desc:"Your NEXT correct answer scores ×2!"},
+ {id:"thief",icon:"🗝️",name:"Thief's Key",desc:"Steal 100 points from the leading team!"},
+ {id:"extra",icon:"⏳",name:"Time Crystal",desc:"+50 points AND pick another stone right now!"}
+];
+const TYPE_LABEL = {mcq:["MULTIPLE CHOICE","#7048e8"],tf:["TRUE or FALSE","#f76707"],fill:["FILL IN THE BLANK","#1c7ed6"],short:["SHORT ANSWER","#e64980"]};
+const OPT_COL = ["#ff6b6b","#339af0","#fab005","#40c057"];
+const OPT_SH = ["▲","◆","●","■"];
+const EMOJIS = ["🦊","🐉","🦉","🦁","🐼","🐙","🦄","🐯","🦖","🐸","🚀","⚡"];
+const TCOLS = ["#ff6b6b","#339af0","#9775fa"];
+const PTS = {q:100, steal:50, chWin:150, chLose:50, trap:50};
+
+/* =========================================================
+   STATE
+   ========================================================= */
+let S = null;
+let sound = true;
+const $ = s=>document.querySelector(s);
+const esc = s=>String(s).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));
+const shuffle = a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function save(){try{localStorage.setItem("towerExpedition",JSON.stringify(S))}catch(e){}}
+function load(){try{const r=localStorage.getItem("towerExpedition");return r?JSON.parse(r):null}catch(e){return null}}
+
+function newState(teams,opts){
+  const st={teams:teams.map((t,i)=>({name:t.name,emoji:t.emoji,color:TCOLS[i],score:0,double:false})),
+    tiles:opts.tiles, timer:opts.timer, floors:opts.floors, turn:0, cur:null, view:"map", fs:{}, finalDone:false, unlockAll:false};
+  FLOORS.forEach(f=>{
+    if(!opts.floors.includes(f.n)) return;
+    const nQ=opts.tiles-2;
+    const qs=shuffle(Q[f.n].map((_,i)=>i)).slice(0,nQ);
+    let tiles=qs.map(i=>({k:"q",i}));
+    tiles.push({k:"tre"});
+    tiles.push({k:"ch",i:Math.floor(Math.random()*CHALLENGES[f.n].length),trap:Math.random()<0.3});
+    st.fs[f.n]={tiles:shuffle(tiles).map(t=>Object.assign(t,{open:false,res:null})),cleared:false};
+  });
+  return st;
+}
+
+/* =========================================================
+   SOUND (Web Audio – no files)
+   ========================================================= */
+let AC=null;
+function ac(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==="suspended")AC.resume();return AC}
+function tone(f,d=.15,type="sine",v=.18,w=0){if(!sound)return;const c=ac();if(!c)return;const t=c.currentTime+w;const o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+d+.02)}
+const SFX={
+ click:()=>tone(660,.06,"triangle",.12),
+ tick:()=>tone(1200,.05,"square",.06),
+ flip:()=>{tone(400,.08,"triangle",.14);tone(800,.1,"triangle",.12,.06)},
+ ok:()=>[523,659,784,1047].forEach((f,i)=>tone(f,.22,"triangle",.18,i*.09)),
+ bad:()=>{tone(220,.3,"sawtooth",.13);tone(160,.4,"sawtooth",.13,.15)},
+ buzz:()=>tone(110,.7,"square",.12),
+ tre:()=>[784,988,1175,1568,1976].forEach((f,i)=>tone(f,.18,"sine",.15,i*.07)),
+ trap:()=>{tone(90,.5,"sawtooth",.2);tone(70,.6,"square",.12,.1)},
+ roll:()=>tone(500+Math.random()*500,.04,"square",.05),
+ door:()=>{for(let i=0;i<8;i++)tone(60+i*12,.3,"sawtooth",.07,i*.12);[523,659,784,1047,1319].forEach((f,i)=>tone(f,.3,"triangle",.15,1.2+i*.1))},
+ win:()=>[523,523,523,659,784,659,784,1047].forEach((f,i)=>tone(f,.3,"triangle",.2,i*.16))
+};
+
+/* =========================================================
+   UI helpers
+   ========================================================= */
+function toast(msg){const d=document.createElement("div");d.className="toast";d.textContent=msg;document.body.appendChild(d);setTimeout(()=>d.remove(),2300)}
+function openModal(html,cls=""){ keyHandler=null; $("#modal").innerHTML=`<div class="ov"><div class="card ${cls}">${html}</div></div>`; return $("#modal .card"); }
+function closeModal(){ $("#modal").innerHTML=""; stopTimer(); }
+function floorById(n){return FLOORS.find(f=>f.n===n)}
+function setFloorTheme(f){const r=document.documentElement.style;r.setProperty("--floor",f?f.c:"#51cf66");r.setProperty("--floorDark",f?f.d:"#2b8a3e");r.setProperty("--floorSoft",f?f.s:"#ebfbee")}
+
+function addPoints(ti,delta,label){
+  const t=S.teams[ti]; const before=t.score; t.score=Math.max(0,t.score+delta); const real=t.score-before;
+  renderBoard(); save();
+  const card=document.querySelector(`.tcard[data-i="${ti}"]`);
+  if(card){const f=document.createElement("div");f.className="floatpts";f.style.color=real>=0?"var(--ok)":"var(--bad)";f.textContent=(real>=0?"+":"")+real;card.appendChild(f);setTimeout(()=>f.remove(),1500)}
+  return real;
+}
+
+/* ---------- leaderboard ---------- */
+const prevScore={};
+function renderBoard(){
+  const b=$("#board"); if(!S){b.innerHTML='<p style="font-size:14px;color:#5a5480">Set up your three teams to begin.</p>';b.style.height="auto";return}
+  const order=S.teams.map((t,i)=>i).sort((a,b)=>S.teams[b].score-S.teams[a].score||a-b);
+  const H=108;
+  b.style.height=(H*3)+"px";
+  if(!b.children.length||b.children.length!==3||!b.querySelector(".tcard")){
+    b.innerHTML=S.teams.map((t,i)=>`<div class="tcard" data-i="${i}" style="--c:${t.color}">
+      <div class="rank"></div><div class="ava">${t.emoji}</div>
+      <div class="info"><div class="nm"></div><div class="sc">0</div><div class="pw"></div></div>
+      <div class="adj"><button data-a="+">+50</button><button data-a="-">−50</button></div></div>`).join("");
+    b.querySelectorAll(".adj button").forEach(btn=>btn.onclick=e=>{const i=+btn.closest(".tcard").dataset.i;addPoints(i,btn.dataset.a==="+"?50:-50);SFX.click()});
+  }
+  S.teams.forEach((t,i)=>{
+    const c=b.querySelector(`.tcard[data-i="${i}"]`);
+    const r=order.indexOf(i);
+    c.style.top=(r*H+8)+"px";
+    c.querySelector(".rank").textContent=r===0&&t.score>0?"👑":(r+1);
+    c.querySelector(".nm").textContent=t.name;
+    c.querySelector(".ava").textContent=t.emoji;
+    c.querySelector(".pw").textContent=t.double?"✨ Double Rune active":"";
+    c.classList.toggle("turn",S.view==="floor"&&S.turn===i);
+    const el=c.querySelector(".sc"); const from=prevScore[i]??t.score; prevScore[i]=t.score;
+    if(from!==t.score){const st=performance.now();const step=now=>{const p=Math.min(1,(now-st)/600);el.textContent=Math.round(from+(t.score-from)*p);if(p<1)requestAnimationFrame(step)};requestAnimationFrame(step)}else el.textContent=t.score;
+  });
+}
+function renderLegend(){
+  $("#legend").innerHTML=`<div class="row"><span class="ico">❓</span><div><b>Question stone</b> – ${S?S.timer:30}s. Correct = <b>+100</b>. Wrong? Other teams can <b>STEAL</b> for +50.</div></div>
+  <div class="row"><span class="ico">💰</span><div><b>Treasure</b> – spin for a lucky reward!</div></div>
+  <div class="row"><span class="ico">⚡</span><div><b>Challenge</b> – complete a task: +150, or fail: −50. Beware of traps!</div></div>
+  <div class="row"><span class="ico">🔓</span><div>Open every stone to break the seal and climb to the next floor.</div></div>`;
+}
+
+/* =========================================================
+   SCREENS
+   ========================================================= */
+function renderSetup(){
+  S=null; renderBoard(); renderLegend(); setFloorTheme(null);
+  const saved=load();
+  const picks=[{name:"Team Phoenix",emoji:"🦊"},{name:"Team Dragon",emoji:"🐉"},{name:"Team Owl",emoji:"🦉"}];
+  const opts={tiles:9,timer:30,floors:[1,2,3,4,5,6,7]};
+  const st=$("#stage");
+  st.innerHTML=`<div class="screen"><div class="panel">
+    <div class="hero"><div class="big">🏯 The Ancient Tower Expedition</div><div class="sub">Decode the Origin of Scientific Life</div></div>
+    <div class="story">📜 <b>Long ago</b>, the secrets of life and matter were locked inside an ancient tower. Each of its <b>7 floors</b> is sealed by a natural phenomenon or a law of science. Three teams of young scientists must answer the tower's riddles to break each seal, collect treasure, survive the traps and reach the <b>👑 Crown Chamber</b> at the top. Only one team will be crowned <b>Master Explorer</b>!</div>
+    <div class="teams-set">${picks.map((p,i)=>`<div class="tset" style="--c:${TCOLS[i]}"><div class="fred" style="font-weight:600;color:${TCOLS[i]}">TEAM ${i+1}</div>
+      <input id="tn${i}" value="${p.name}" maxlength="18"><div class="emojis" data-i="${i}">${EMOJIS.map(e=>`<button class="${e===p.emoji?"sel":""}">${e}</button>`).join("")}</div></div>`).join("")}</div>
+    <div class="opts">
+      <div class="opt"><h4>🏰 Floors to explore</h4><div class="chips" id="chF">${FLOORS.map(f=>`<button class="chip on" data-n="${f.n}">${f.icon} ${f.n}. ${f.topic}</button>`).join("")}</div></div>
+      <div class="opt" style="max-width:300px"><h4>🪨 Stones per floor</h4><div class="chips" id="chT"><button class="chip" data-v="6">6 (quick)</button><button class="chip on" data-v="9">9 (full)</button></div>
+        <h4 style="margin-top:12px">⏱️ Seconds per question</h4><div class="chips" id="chS"><button class="chip" data-v="20">20</button><button class="chip on" data-v="30">30</button><button class="chip" data-v="45">45</button></div></div>
+    </div>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+      <button class="go" id="goBtn">⚔️ Begin the Expedition!</button>
+      ${saved?`<button class="go alt" id="contBtn">↻ Continue saved game</button>`:""}
+    </div>
+  </div></div>`;
+  st.querySelectorAll(".emojis").forEach(box=>box.querySelectorAll("button").forEach(b=>b.onclick=()=>{box.querySelectorAll("button").forEach(x=>x.classList.remove("sel"));b.classList.add("sel");picks[+box.dataset.i].emoji=b.textContent;SFX.click()}));
+  st.querySelectorAll("#chF .chip").forEach(c=>c.onclick=()=>{c.classList.toggle("on");SFX.click()});
+  const single=(id,key)=>st.querySelectorAll(id+" .chip").forEach(c=>c.onclick=()=>{st.querySelectorAll(id+" .chip").forEach(x=>x.classList.remove("on"));c.classList.add("on");opts[key]=+c.dataset.v;SFX.click()});
+  single("#chT","tiles"); single("#chS","timer");
+  $("#goBtn").onclick=()=>{
+    const fl=[...st.querySelectorAll("#chF .chip.on")].map(c=>+c.dataset.n);
+    if(!fl.length){toast("Choose at least one floor!");return}
+    opts.floors=fl;
+    picks.forEach((p,i)=>p.name=($("#tn"+i).value.trim()||("Team "+(i+1))));
+    S=newState(picks,opts); Object.keys(prevScore).forEach(k=>delete prevScore[k]); $("#board").innerHTML="";
+    save(); SFX.door(); renderMap(true);
+  };
+  if(saved) $("#contBtn").onclick=()=>{S=saved;$("#board").innerHTML="";renderLegend();S.cur&&S.view==="floor"?enterFloor(S.cur):renderMap()};
+}
+
+/* ---------- floor helpers ---------- */
+function incl(){return FLOORS.filter(f=>S.floors.includes(f.n))}
+function nextFloor(){return incl().find(f=>!S.fs[f.n].cleared)}
+function isUnlocked(n){ if(S.unlockAll) return true; const nf=nextFloor(); return S.fs[n].cleared || (nf&&nf.n===n); }
+function allCleared(){return incl().every(f=>S.fs[f.n].cleared)}
+
+function renderMap(intro){
+  S.view="map"; save(); setFloorTheme(null); renderBoard(); renderLegend();
+  const nf=nextFloor(); const done=incl().filter(f=>S.fs[f.n].cleared).length;
+  const st=$("#stage");
+  const slabs=FLOORS.slice().reverse().map((f,ri)=>{
+    const w=62+(7-f.n)*5.4;
+    const inc=S.floors.includes(f.n);
+    let cls="slab", status="";
+    if(!inc){cls+=" skipped";status="skip"}
+    else if(S.fs[f.n].cleared){status="✅ <small>cleared</small>"}
+    else if(isUnlocked(f.n)){cls+=(nf&&nf.n===f.n?" current":"");const o=S.fs[f.n].tiles.filter(t=>t.open).length;status=`✨ <small>${o}/${S.tiles}</small>`}
+    else {cls+=" locked";status="🔒"}
+    const wins=[12,30,70,88].map(p=>`<i class="win" style="left:${p}%"></i>`).join("");
+    return `<div class="${cls}" data-n="${f.n}" style="--fc:${f.c};width:${w}%">${wins}<div class="fi">${f.icon}</div><div class="ft"><span>Floor ${f.n} · ${f.short||f.topic}</span><b>${f.name}</b></div><div class="st">${status}</div></div>`;
+  }).join("");
+  const fin=allCleared();
+  st.innerHTML=`<div class="mapwrap">
+   <div class="mapinfo">
+     <div class="panel"><div class="fred" style="font-size:clamp(22px,2.4vw,36px);font-weight:700;color:#5f3dc4;line-height:1.1">${fin?"👑 The Crown Chamber is open!":nf?`Next seal: Floor ${nf.n}`:""}</div>
+       <div style="font-size:17px;margin-top:8px;line-height:1.5">${fin?"All seals are broken! Enter the Crown Chamber to face the <b>Guardian's Riddle</b> and decide the champion.":nf?`<b>${nf.icon} ${nf.name}</b><br><i style="color:#5a5480">${nf.seal}</i>`:""}</div>
+       <div style="margin-top:14px;font-family:Fredoka;font-weight:600;color:#2b8a3e">Seals broken: ${done} / ${incl().length}</div>
+       <button class="go ${fin?"":"alt"}" id="enterBtn" style="margin:16px 0 0">${fin?"👑 Enter the Crown Chamber":"🚪 Enter Floor "+(nf?nf.n:"")}</button>
+     </div>
+     <div class="panel" style="padding:14px 20px;font-size:14.5px;line-height:1.5"><b class="fred">How to play</b><br>Teams take turns choosing a numbered stone. Hidden behind each stone is a <b>question</b>, a <b>treasure</b> or a <b>challenge</b>. Answer within the time limit to win points. Climb all floors – the highest score in the Crown Chamber wins!</div>
+   </div>
+   <div class="tower" id="tower">
+     <div class="crown ${fin?"":"locked"}" id="crown"><div class="dome"></div><div class="flag">🚩</div><div class="lbl">👑 Crown Chamber<br><small style="font-size:11px">Origin of Scientific Life</small></div></div>
+     ${slabs}
+     <div class="ground"></div>
+   </div></div>`;
+  st.querySelectorAll(".slab").forEach(s=>s.onclick=()=>{
+    const n=+s.dataset.n;
+    if(!S.floors.includes(n)){toast("This floor is not part of today's expedition.");return}
+    if(!isUnlocked(n)){SFX.bad();toast("🔒 This floor is still sealed! Clear the floor below first.");return}
+    SFX.click(); enterFloor(n);
+  });
+  $("#crown").onclick=()=>{ if(allCleared()) showFinal(); else {SFX.bad();toast("🔒 Break every seal to open the Crown Chamber!")} };
+  $("#enterBtn").onclick=()=>{ if(fin) showFinal(); else if(nf){SFX.click();enterFloor(nf.n)} };
+  if(intro){ const f=nf; if(f) setTimeout(()=>toast(`🗺️ Your expedition begins at Floor ${f.n}: ${f.name}!`),300) }
+}
+
+function enterFloor(n){
+  S.cur=n; S.view="floor"; save();
+  const f=floorById(n); setFloorTheme(f); renderBoard();
+  const fs=S.fs[n];
+  const opened=fs.tiles.filter(t=>t.open).length;
+  const st=$("#stage");
+  st.innerHTML=`<div class="floorview">
+    <div class="fhead"><div class="fic">${f.icon}</div><div style="flex:1"><div class="tp">Floor ${f.n} · ${f.topic}</div><h2>${f.name}</h2></div>
+      <div class="progress">Seal <div class="dots">${fs.tiles.map(t=>`<i class="${t.open?"f":""}"></i>`).join("")}</div> ${opened}/${fs.tiles.length}</div></div>
+    <div class="seal">🔮 ${f.seal}</div>
+    <div class="grid g${S.tiles}" id="grid">${fs.tiles.map((t,i)=>tileHTML(t,i)).join("")}</div>
+  </div>`;
+  st.querySelectorAll(".tile").forEach(el=>el.onclick=()=>{const i=+el.dataset.i; if(fs.tiles[i].open) return; openTile(i)});
+}
+function tileHTML(t,i){
+  let cls="tile", back="";
+  if(t.open){
+    cls+=" open";
+    if(t.k==="q"){ if(t.res==="ok"){cls+=" r-ok";back=`<div class="bi">✅</div><div class="bt">${esc(t.who||"")}</div>`} else if(t.res==="steal"){cls+=" r-ok";back=`<div class="bi">🦹</div><div class="bt">Stolen by ${esc(t.who||"")}</div>`} else {cls+=" r-bad";back=`<div class="bi">❌</div><div class="bt">No points</div>`} }
+    if(t.k==="tre"){cls+=" r-tre";back=`<div class="bi">💰</div><div class="bt">${esc(t.who||"Treasure")}</div>`}
+    if(t.k==="ch"){cls+=" r-ch";back=`<div class="bi">${t.trap?"💥":"⚡"}</div><div class="bt">${esc(t.who||"Challenge")}</div>`}
+  }
+  return `<div class="${cls}" data-i="${i}"><div class="inner"><div class="face front"><span class="rune">✦</span><div class="num">${i+1}</div></div><div class="face back">${back}</div></div></div>`;
+}
+
+function teamTag(i){const t=S.teams[i];return `<span class="qteam"><span class="dot" style="background:${t.color}">${t.emoji}</span><span style="color:${t.color}">${esc(t.name)}</span></span>`}
+
+function openTile(i){
+  const fs=S.fs[S.cur]; const t=fs.tiles[i];
+  SFX.flip();
+  const el=document.querySelector(`.tile[data-i="${i}"]`); el.classList.add("open");
+  el.querySelector(".back").innerHTML=`<div class="bi">${t.k==="q"?"❓":t.k==="tre"?"💰":"⚡"}</div>`;
+  setTimeout(()=>{ if(t.k==="q") showQuestion(i); else if(t.k==="tre") showTreasure(i); else showChallenge(i); },650);
+}
+
+function finishTile(i,res,who,extraTurn){
+  const fs=S.fs[S.cur]; const t=fs.tiles[i];
+  t.open=true; t.res=res; t.who=who;
+  if(!extraTurn) S.turn=(S.turn+1)%3;
+  closeModal(); save();
+  if(fs.tiles.every(x=>x.open)){ fs.cleared=true; save(); enterFloor(S.cur); setTimeout(()=>showCleared(S.cur),700); }
+  else enterFloor(S.cur);
+}
+
+/* ---------- timer ---------- */
+let TM=null;
+function startTimer(sec,onEnd){
+  stopTimer();
+  const box=$("#modal .timer"); if(!box) return;
+  const circ=2*Math.PI*42; const ring=box.querySelector(".fg"); const num=box.querySelector(".tn");
+  let left=sec, total=sec, running=true, last=performance.now(), acc=0;
+  const draw=()=>{num.textContent=Math.ceil(left);ring.style.strokeDashoffset=circ*(1-left/total);box.classList.toggle("warn",left<=5);ring.style.stroke=left<=5?"#f03e3e":left<=total/2?"#fab005":"#40c057"};
+  draw();
+  TM={pause(){running=false},play(){running=true;last=performance.now()},add(s){left+=s;total=Math.max(total,left);draw()},get running(){return running},get left(){return left},stop(){running=false;cancelAnimationFrame(TM&&TM.raf)}};
+  let lastSec=Math.ceil(left);
+  const loop=now=>{
+    if(!TM) return;
+    const dt=(now-last)/1000; last=now;
+    if(running){left=Math.max(0,left-dt);draw(); const cs=Math.ceil(left); if(cs!==lastSec){lastSec=cs; if(cs<=5&&cs>0)SFX.tick()} if(left<=0){running=false;SFX.buzz();onEnd&&onEnd();return}}
+    TM.raf=requestAnimationFrame(loop);
+  };
+  TM.raf=requestAnimationFrame(loop);
+}
+function stopTimer(){ if(TM){cancelAnimationFrame(TM.raf);TM=null} }
+const timerHTML=`<div class="timer"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="#fff" stroke="#eee" stroke-width="10"/><circle class="fg" cx="50" cy="50" r="42" fill="none" stroke="#40c057" stroke-width="10" stroke-linecap="round" stroke-dasharray="${2*Math.PI*42}" style="transition:stroke .3s"/></svg><div class="tn">30</div></div>`;
+
+/* ---------- question ---------- */
+function showQuestion(ti){
+  const fs=S.fs[S.cur]; const tile=fs.tiles[ti]; const q=Q[S.cur][tile.i]; const f=floorById(S.cur);
+  const at=S.turn; const [lab,col]=TYPE_LABEL[q.t];
+  let body="";
+  const qtext=q.t==="fill"?esc(q.q).replace("___",'<span class="blank" id="blank">?</span>'):esc(q.q);
+  if(q.t==="mcq") body=`<div class="optgrid">${q.o.map((o,k)=>`<button class="ob" data-k="${k}" style="--oc:${OPT_COL[k]}"><span class="sh">${OPT_SH[k]}</span><span>${String.fromCharCode(65+k)}. ${esc(o)}</span></button>`).join("")}</div>`;
+  if(q.t==="tf") body=`<div class="optgrid tf"><button class="ob" data-k="1" style="--oc:#40c057"><span class="sh">👍</span><span>TRUE</span></button><button class="ob" data-k="0" style="--oc:#ff6b6b"><span class="sh">👎</span><span>FALSE</span></button></div>`;
+  const auto=(q.t==="mcq"||q.t==="tf");
+  openModal(`${timerHTML}
+    <div class="qtop"><span class="pill" style="--pc:${col}">${lab}</span><span class="pill" style="--pc:${f.d}">${f.icon} Floor ${f.n}</span>${teamTag(at)}${S.teams[at].double?'<span class="pill" style="--pc:#f08c00">✨ ×2</span>':""}</div>
+    <div class="qtext" style="padding-right:100px">${qtext}</div>
+    ${body}
+    <div id="ansHost"></div>
+    <div class="ctrl" id="ctrl">
+      <button class="btn ghost" id="bPause">⏸ Pause</button>
+      <button class="btn ghost" id="bAdd">+10 s</button>
+      <span id="tu"></span><div class="spacer" style="flex:1"></div>
+      <button class="btn" id="bReveal" style="--bc:#7048e8">👁 Reveal answer</button>
+    </div>
+    <div id="judgeHost"></div>`);
+  $("#modal .tn").textContent=S.timer;
+  let locked=false, picked=null;
+  const reveal=()=>{
+    if(locked) return; locked=true; stopTimer();
+    $("#bReveal").disabled=true; $("#bPause").disabled=true; $("#bAdd").disabled=true;
+    const ansText = q.t==="tf"?(q.a?"TRUE":"FALSE"): q.t==="mcq"?`${String.fromCharCode(65+q.a)}. ${q.o[q.a]}`:q.a;
+    if(q.t==="fill"){const b=$("#blank");b.textContent=q.a;b.classList.add("filled")}
+    $("#ansHost").innerHTML=`<div class="answerbox"><div class="al">✅ Answer: ${esc(ansText)}</div><div class="ex">💡 ${esc(q.x)}</div></div>`;
+    if(auto){
+      const correctK = q.t==="tf"?(q.a?1:0):q.a;
+      document.querySelectorAll("#modal .ob").forEach(b=>{b.disabled=true;const k=+b.dataset.k;
+        if(k===correctK){b.classList.add("right");b.insertAdjacentHTML("beforeend",'<span class="mk">✔</span>')}
+        else if(k===picked){b.classList.add("wrong");b.insertAdjacentHTML("beforeend",'<span class="mk">✖</span>')}
+        else b.classList.add("dim")});
+      if(picked!==null){ picked===correctK?activeRight():activeWrong(); }
+      else judgeButtons();
+    } else judgeButtons();
+  };
+  const judgeButtons=()=>{
+    $("#judgeHost").innerHTML=`<div class="judge"><h4>Did ${esc(S.teams[at].name)} answer correctly?</h4><div class="row">
+      <button class="btn" style="--bc:#2fb35a" id="jY">✔ Correct</button><button class="btn" style="--bc:#f03e3e" id="jN">✖ Wrong / no answer</button></div></div>`;
+    $("#jY").onclick=activeRight; $("#jN").onclick=activeWrong;
+  };
+  const activeRight=()=>{
+    SFX.ok(); burst(60);
+    const mult=S.teams[at].double?2:1; S.teams[at].double=false;
+    addPoints(at,PTS.q*mult);
+    $("#judgeHost").innerHTML=`<div class="judge" style="background:#ebfbee;border-color:#2fb35a"><h4>🎉 Brilliant! ${esc(S.teams[at].name)} earns +${PTS.q*mult} points${mult>1?" (Double Rune!)":""}</h4>
+      <div class="row"><button class="btn" style="--bc:#2fb35a" id="jC">Continue ➜</button></div></div>`;
+    $("#jC").onclick=()=>finishTile(ti,"ok",S.teams[at].name);
+  };
+  const activeWrong=()=>{
+    SFX.bad(); S.teams[at].double=false; renderBoard();
+    const others=[0,1,2].filter(x=>x!==at);
+    $("#judgeHost").innerHTML=`<div class="judge"><h4>🦹 STEAL CHANCE! Other teams – hands up! Who can answer correctly? (+${PTS.steal})</h4>
+      <div class="row steal">${others.map(o=>`<button class="tbtn2" data-o="${o}" style="--c:${S.teams[o].color}">${S.teams[o].emoji} ${esc(S.teams[o].name)}</button>`).join("")}
+      <button class="btn ghost" id="jNone">Nobody</button></div></div>`;
+    document.querySelectorAll("#judgeHost .tbtn2").forEach(b=>b.onclick=()=>{const o=+b.dataset.o;SFX.ok();burst(30);addPoints(o,PTS.steal);setTimeout(()=>finishTile(ti,"steal",S.teams[o].name),700)});
+    $("#jNone").onclick=()=>finishTile(ti,"bad","");
+  };
+  document.querySelectorAll("#modal .ob").forEach(b=>b.onclick=()=>{ if(locked) return; picked=+b.dataset.k; SFX.click(); reveal(); });
+  $("#bReveal").onclick=reveal;
+  $("#bPause").onclick=()=>{ if(!TM) return; if(TM.running){TM.pause();$("#bPause").textContent="▶ Resume"} else {TM.play();$("#bPause").textContent="⏸ Pause"} };
+  $("#bAdd").onclick=()=>{ if(TM){TM.add(10);if(!TM.running){TM.play();$("#bPause").textContent="⏸ Pause"}} };
+  setTimeout(()=>{ if(!locked) startTimer(S.timer,()=>{ $("#tu").innerHTML='<span class="timesup">⏰ TIME\'S UP!</span>'; }) },400);
+  keyHandler=e=>{ if(e.code==="Space"){e.preventDefault();$("#bPause").click()} if(e.key==="r"||e.key==="R") reveal(); if(!locked&&auto&&["1","2","3","4"].includes(e.key)){const bs=document.querySelectorAll("#modal .ob");const b=bs[+e.key-1];b&&b.click()} };
+}
+let keyHandler=null;
+document.addEventListener("keydown",e=>{ if(keyHandler&&$("#modal .card")) keyHandler(e) });
+
+/* ---------- treasure ---------- */
+function showTreasure(ti){
+  const at=S.turn;
+  openModal(`<div class="special"><div class="big">💰</div><h2 class="fred" style="color:#e67700">TREASURE CHEST!</h2>
+    <div style="font-size:20px">${teamTag(at)} found a hidden chest. Spin to reveal your reward!</div>
+    <div class="reel" id="reel"><div class="ri">❔ <span style="font-size:22px">Ready…</span></div></div>
+    <div class="ctrl" style="justify-content:center"><button class="btn" style="--bc:#f08c00" id="spin">🎰 SPIN!</button></div></div>`);
+  const reel=$("#reel");
+  $("#spin").onclick=()=>{
+    $("#spin").disabled=true;
+    const pick=TREASURES[Math.floor(Math.random()*TREASURES.length)];
+    let n=0, delay=60;
+    const step=()=>{
+      const t=TREASURES[n%TREASURES.length]; n++;
+      reel.innerHTML=`<div class="ri"><span>${t.icon}</span>${t.name}</div>`; SFX.roll();
+      if(n<18||TREASURES[(n-1)%TREASURES.length]!==pick){delay*=1.12;setTimeout(step,delay)}
+      else{
+        reel.classList.add("done"); SFX.tre(); burst(80,true);
+        reel.innerHTML=`<div class="ri"><span>${pick.icon}</span><div style="text-align:left">${pick.name}<div style="font-size:18px;font-weight:500">${pick.desc}</div></div></div>`;
+        let label=pick.name, extra=false;
+        if(pick.id==="gold") addPoints(at,150);
+        if(pick.id==="double"){S.teams[at].double=true;renderBoard();save()}
+        if(pick.id==="extra"){addPoints(at,50);extra=true}
+        if(pick.id==="thief"){
+          const others=[0,1,2].filter(x=>x!==at).sort((a,b)=>S.teams[b].score-S.teams[a].score);
+          const v=others[0]; const took=-addPoints(v,-100); addPoints(at,took);
+          reel.insertAdjacentHTML("afterend",`<div style="font-size:18px;margin-top:-6px">🗝️ Took <b>${took}</b> points from ${esc(S.teams[v].name)}!</div>`);
+          label=`Stole ${took} pts`;
+        }
+        $("#modal .ctrl").innerHTML=`<button class="btn" style="--bc:#2fb35a" id="claim">${extra?"⏳ Pick another stone ➜":"Claim & continue ➜"}</button>`;
+        $("#claim").onclick=()=>finishTile(ti,"tre",`${S.teams[at].emoji} ${label}`,extra);
+      }
+    };
+    step();
+  };
+}
+
+/* ---------- challenge / trap ---------- */
+function showChallenge(ti){
+  const at=S.turn; const tile=S.fs[S.cur].tiles[ti];
+  if(tile.trap){
+    SFX.trap(); document.body.animate([{transform:"translateX(0)"},{transform:"translateX(-12px)"},{transform:"translateX(12px)"},{transform:"translateX(0)"}],{duration:400,iterations:2});
+    openModal(`<div class="special"><div class="big">💥</div><h2 class="fred" style="color:#c92a2a">TRAP! The floor is crumbling!</h2>
+      <div style="font-size:22px;margin:10px 0">${teamTag(at)} stepped on a cursed stone and loses <b>${PTS.trap}</b> points.</div>
+      <div class="ctrl" style="justify-content:center"><button class="btn" style="--bc:#f03e3e" id="ok">Ouch! Continue ➜</button></div></div>`);
+    addPoints(at,-PTS.trap);
+    $("#ok").onclick=()=>finishTile(ti,"ch",`${S.teams[at].emoji} Trap −${PTS.trap}`);
+    return;
+  }
+  const txt=CHALLENGES[S.cur][tile.i];
+  openModal(`${timerHTML}<div class="special"><div class="big">⚡</div><h2 class="fred" style="color:#5f3dc4">CHALLENGE STONE!</h2>
+    <div style="font-size:20px">${teamTag(at)} must complete this task:</div>
+    <div class="chtext">${esc(txt)}</div>
+    <div style="font-size:16px;color:#5a5480">Success: <b style="color:#2fb35a">+${PTS.chWin}</b> · Fail: <b style="color:#f03e3e">−${PTS.chLose}</b> · Teacher decides!</div>
+    <div class="ctrl" style="justify-content:center">
+      <button class="btn ghost" id="bPause">⏸ Pause</button><span id="tu"></span>
+      <button class="btn" style="--bc:#2fb35a" id="win">✔ Success!</button><button class="btn" style="--bc:#f03e3e" id="lose">✖ Failed</button></div></div>`);
+  $("#modal .tn").textContent=S.timer;
+  $("#bPause").onclick=()=>{ if(!TM) return; if(TM.running){TM.pause();$("#bPause").textContent="▶ Resume"} else {TM.play();$("#bPause").textContent="⏸ Pause"} };
+  setTimeout(()=>startTimer(S.timer,()=>{$("#tu").innerHTML='<span class="timesup">⏰ TIME\'S UP!</span>'}),400);
+  $("#win").onclick=()=>{SFX.ok();burst(60);addPoints(at,PTS.chWin);setTimeout(()=>finishTile(ti,"ch",`${S.teams[at].emoji} +${PTS.chWin}`),600)};
+  $("#lose").onclick=()=>{SFX.bad();addPoints(at,-PTS.chLose);setTimeout(()=>finishTile(ti,"ch",`${S.teams[at].emoji} −${PTS.chLose}`),600)};
+  keyHandler=e=>{ if(e.code==="Space"){e.preventDefault();$("#bPause").click()} };
+}
+
+/* ---------- floor cleared ---------- */
+function showCleared(n){
+  const f=floorById(n); const nf=nextFloor();
+  openModal(`<div class="special"><h2 class="fred" style="color:${f.d}">🎊 SEAL BROKEN! 🎊</h2>
+    <div style="font-size:20px">${f.icon} <b>${f.name}</b> has been conquered!</div>
+    <div class="door" id="door"><div class="fr">${nf?nf.icon:"👑"}</div><div class="lf"></div><div class="rt"></div></div>
+    <div style="font-size:19px">${nf?`The door to <b>Floor ${nf.n}: ${nf.name}</b> creaks open…`:"The path to the <b>👑 Crown Chamber</b> is open!"}</div>
+    <div class="ctrl" style="justify-content:center"><button class="btn" style="--bc:${f.d}" id="up">🧗 Climb the tower ➜</button></div></div>`);
+  SFX.door(); setTimeout(()=>{$("#door")&&$("#door").classList.add("open");burst(120,true)},300);
+  $("#up").onclick=()=>{closeModal();renderMap()};
+}
+
+/* ---------- final ---------- */
+function showFinal(){
+  if(S.finalDone){showVictory();return}
+  const fq=FINAL_Q[Math.floor(Math.random()*FINAL_Q.length)];
+  const wager=S.teams.map(t=>Math.min(100,t.score)); const judged=[null,null,null];
+  setFloorTheme({c:"#fab005",d:"#e67700",s:"#fff9db"});
+  const draw=(phase)=>{
+    const card=openModal(`${phase==="q"?timerHTML:""}<div class="special">
+      <div class="big" style="animation:none">👑</div><h2 class="fred" style="color:#e67700">THE GUARDIAN'S RIDDLE</h2>
+      ${phase==="w"?`<div style="font-size:19px;max-width:820px;margin:0 auto">The Tower Guardian asks ONE final riddle. Each team secretly decides how many points to <b>wager</b> (up to 300). Answer correctly: <b style="color:#2fb35a">win</b> your wager. Wrong: <b style="color:#f03e3e">lose</b> it!</div>`
+       :`<div class="chtext" style="text-align:left">${esc(fq.q)}</div>`}
+      ${phase==="a"?`<div class="answerbox" style="text-align:left"><div class="al">✅ ${esc(fq.a)}</div></div>`:""}
+      <div class="wager">${S.teams.map((t,i)=>`<div class="wcard" style="--c:${t.color}"><div class="fred" style="font-weight:600;font-size:18px">${t.emoji} ${esc(t.name)}</div>
+        <div style="font-size:13px;color:#5a5480">Wager (score ${t.score})</div><div class="wv">${wager[i]}</div>
+        ${phase==="w"?`<div class="wb"><button data-i="${i}" data-d="-50">−</button><button data-i="${i}" data-d="50">+</button></div>`:""}
+        ${phase==="a"?`<div class="judge2"><button class="y ${judged[i]===true?"on":""}" data-i="${i}" data-v="1">✔ Right</button><button class="n ${judged[i]===false?"on":""}" data-i="${i}" data-v="0">✖ Wrong</button></div>`:""}
+      </div>`).join("")}</div>
+      <div class="ctrl" style="justify-content:center">
+        ${phase==="w"?`<button class="btn ghost" id="back">← Back to tower</button><button class="btn" style="--bc:#e67700" id="lock">🔒 Lock wagers & show riddle</button>`:""}
+        ${phase==="q"?`<button class="btn ghost" id="bPause">⏸ Pause</button><span id="tu"></span><button class="btn" style="--bc:#7048e8" id="rev">👁 Reveal answer</button>`:""}
+        ${phase==="a"?`<button class="btn" style="--bc:#2fb35a" id="apply" ${judged.includes(null)?"disabled":""}>🏆 Crown the champion!</button>`:""}
+      </div></div>`);
+    if(phase==="w"){
+      card.querySelectorAll(".wb button").forEach(b=>b.onclick=()=>{const i=+b.dataset.i;const max=Math.min(300,S.teams[i].score);wager[i]=Math.max(0,Math.min(max,wager[i]+ +b.dataset.d));SFX.click();draw("w")});
+      $("#lock").onclick=()=>{SFX.door();draw("q")};
+      $("#back").onclick=()=>{closeModal();renderMap()};
+    }
+    if(phase==="q"){
+      $("#modal .tn").textContent=60;
+      setTimeout(()=>$("#rev")&&startTimer(60,()=>{$("#tu").innerHTML='<span class="timesup">⏰ TIME\'S UP!</span>'}),400);
+      $("#bPause").onclick=()=>{ if(!TM) return; if(TM.running){TM.pause();$("#bPause").textContent="▶ Resume"} else {TM.play();$("#bPause").textContent="⏸ Pause"} };
+      $("#rev").onclick=()=>{stopTimer();SFX.flip();draw("a")};
+    }
+    if(phase==="a"){
+      card.querySelectorAll(".judge2 button").forEach(b=>b.onclick=()=>{judged[+b.dataset.i]=b.dataset.v==="1";SFX.click();draw("a")});
+      $("#apply").onclick=()=>{S.teams.forEach((t,i)=>{if(wager[i])addPoints(i,judged[i]?wager[i]:-wager[i])});S.finalDone=true;save();closeModal();setTimeout(showVictory,900)};
+    }
+  };
+  draw("w");
+}
+
+function showVictory(){
+  S.view="victory"; save(); renderBoard();
+  const order=S.teams.map((t,i)=>i).sort((a,b)=>S.teams[b].score-S.teams[a].score);
+  const pos=[order[1],order[0],order[2]]; const hs=[150,210,110]; const lbl=["2","1","3"];
+  const top=S.teams[order[0]]; const tie=S.teams[order[1]].score===top.score;
+  $("#stage").innerHTML=`<div class="screen" style="justify-content:center"><div class="panel" style="text-align:center">
+    <div class="hero"><div class="big">${tie?"🤝 It's a tie at the top!":"👑 "+esc(top.name)+" wins!"}</div>
+    <div class="sub">${tie?"Two teams share the crown of Master Explorer!":"Crowned MASTER EXPLORERS of the Ancient Tower"}</div></div>
+    <div class="podium">${pos.map((ti,k)=>{const t=S.teams[ti];return `<div class="pcol"><div class="pa">${k===1?"👑":""}${t.emoji}</div><div class="pn">${esc(t.name)}</div><div class="ps" style="color:${t.color}">${t.score}</div>
+      <div class="blk" style="height:${hs[k]}px;background:${t.color}">${lbl[k]}</div></div>`}).join("")}</div>
+    <div style="font-size:17px;margin-top:16px;color:#5a5480">You have decoded the Origin of Scientific Life – from nutrients and body systems to atoms, mixtures, metals and energy changes. Well done, scientists! 🔬</div>
+    <button class="go" id="again">🔄 New expedition</button></div></div>`;
+  SFX.win(); burst(220,true); setTimeout(()=>burst(160,true),900); setTimeout(()=>burst(160,true),1800);
+  $("#again").onclick=()=>{try{localStorage.removeItem("towerExpedition")}catch(e){} renderSetup()};
+}
+
+/* =========================================================
+   CONFETTI
+   ========================================================= */
+const cv=$("#confetti"), cx=cv.getContext("2d"); let parts=[], animOn=false;
+function sizeCv(){cv.width=innerWidth;cv.height=innerHeight} sizeCv(); addEventListener("resize",sizeCv);
+function burst(n=80,wide){
+  const cols=["#ff6b6b","#ffd43b","#51cf66","#339af0","#9775fa","#f06595","#ff922b"];
+  for(let i=0;i<n;i++) parts.push({x:wide?Math.random()*cv.width:cv.width/2+(Math.random()-.5)*200,y:wide?-20:cv.height*.45,vx:(Math.random()-.5)*(wide?4:16),vy:wide?Math.random()*3+2:-Math.random()*14-4,
+    r:Math.random()*6+4,c:cols[i%cols.length],a:Math.random()*6,va:(Math.random()-.5)*.3,life:0,shape:Math.random()<.3?"c":"r"});
+  if(!animOn){animOn=true;requestAnimationFrame(frame)}
+}
+function frame(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  parts.forEach(p=>{p.vy+=.25;p.x+=p.vx;p.y+=p.vy;p.a+=p.va;p.vx*=.99;p.life++;
+    cx.save();cx.translate(p.x,p.y);cx.rotate(p.a);cx.fillStyle=p.c;
+    if(p.shape==="c"){cx.beginPath();cx.arc(0,0,p.r/1.5,0,7);cx.fill()} else cx.fillRect(-p.r/2,-p.r/4,p.r,p.r/2); cx.restore()});
+  parts=parts.filter(p=>p.y<cv.height+40&&p.life<400);
+  if(parts.length) requestAnimationFrame(frame); else {animOn=false;cx.clearRect(0,0,cv.width,cv.height)}
+}
+
+/* =========================================================
+   SKY + TOP BAR
+   ========================================================= */
+(function sky(){
+  const s=$("#sky"); let h="";
+  for(let i=0;i<6;i++){const w=90+Math.random()*120;h+=`<div class="cloud" style="width:${w}px;height:${w*.32}px;top:${4+Math.random()*55}%;animation:drift ${60+Math.random()*60}s linear ${-Math.random()*90}s infinite"></div>`}
+  for(let i=0;i<22;i++)h+=`<div class="spark" style="left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*3}s"></div>`;
+  s.innerHTML=h;
+})();
+$("#bSound").onclick=()=>{sound=!sound;$("#bSound").textContent=sound?"🔊":"🔇";if(sound)SFX.click()};
+$("#bFull").onclick=()=>{try{if(!document.fullscreenElement)document.documentElement.requestFullscreen().catch(()=>toast("Full screen is not available here"));else document.exitFullscreen()}catch(e){toast("Full screen is not available here")}};
+$("#bMap").onclick=()=>{ if(!S){toast("Set up your teams first!");return} if(S.view==="victory"){showVictory();return} closeModal(); SFX.click(); renderMap() };
+$("#bMenu").onclick=()=>{
+  const h=$("#menuHost"); if(h.innerHTML){h.innerHTML="";return}
+  h.innerHTML=`<div class="menu">
+    <button id="mTurn">🔁 Change whose turn it is</button>
+    <button id="mUnlock">🔓 Unlock all floors (teacher)</button>
+    <button id="mFinal">👑 Jump to the Crown Chamber</button>
+    <button id="mNew">🆕 New game / setup</button>
+    <div style="padding:8px 12px;font-size:12.5px;color:#5a5480;line-height:1.5">Shortcuts in a question:<br><span class="kbd">Space</span> pause · <span class="kbd">R</span> reveal · <span class="kbd">1–4</span> choose option</div></div>`;
+  const close=()=>h.innerHTML="";
+  $("#mTurn").onclick=()=>{close();if(!S)return;S.turn=(S.turn+1)%3;save();renderBoard();toast(`It's now ${S.teams[S.turn].name}'s turn`)};
+  $("#mUnlock").onclick=()=>{close();if(!S)return;S.unlockAll=true;save();toast("🔓 All floors unlocked");if(S.view==="map")renderMap()};
+  $("#mFinal").onclick=()=>{close();if(!S)return;showFinal()};
+  $("#mNew").onclick=()=>{close();closeModal();renderSetup()};
+};
+document.addEventListener("click",e=>{ if(!e.target.closest("#bMenu")&&!e.target.closest(".menu")) $("#menuHost").innerHTML="" });
+
+renderSetup();
+</script>
+</body>
+</html>
